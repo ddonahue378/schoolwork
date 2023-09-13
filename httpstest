@@ -1,0 +1,111 @@
+# First it gets the libraries used for the program
+import requests  # requests is used to call the api and get the information we want to output
+
+import json  # the apis return json tables, so we need the json library to read values from them
+
+Coin_Name = input(
+    "Cryptocurrency Name : "
+)  # prompts the user to input the coin they want info on
+
+
+url = "https://api.coingecko.com/api/v3/simple/price?ids={CCoin_Name}&vs_currencies=usd&precision=2".format(
+    CCoin_Name=Coin_Name
+)  # first api call url replaces {CCoin_Name} with the Coin_Name input from earlier
+
+Otherurl = (
+    "https://api.coingecko.com/api/v3/coins/%s" % Coin_Name
+)  # second api call url
+
+response = requests.get(url)  # sends GET request to coingecko.com
+response2 = requests.get(Otherurl)  # sends GET request to coingecko.com
+
+
+def comma_value(
+    number,
+):  # function that adds commas to large numbers (Changes 10000 to 10,000)
+    newnumber = "{:,}".format(number)  # formats the number
+    return newnumber  # returns the new formatted number
+
+
+if (
+    response.status_code == 200
+):  # status code 200 means that the request was successful, so we only run the following code if the request is successful
+    ResponseDEC = json.loads(
+        response.text
+    )  # converts the plain text response to a json table we can pull values from
+    ResponseCoinInfo = json.loads(response2.text)  # same here
+
+    formatUSDValue = comma_value(
+        ResponseDEC[Coin_Name]["usd"]
+    )  # uses the function from earlier to add commas to the "usd" value in the table
+
+    coinPublicName = ResponseCoinInfo["name"]  # gets the coin's name from the table
+    coinSymbol = ResponseCoinInfo["tickers"][0]["base"]  # gets the coins symbol (for example bitcoin's symbol is "BTC")
+
+    # prints the first coin message
+    print(
+        "One {CoinPublicName} ({COINSYMBOL}) is valued at $%s".format(
+            CoinPublicName=coinPublicName, COINSYMBOL=coinSymbol
+        )
+        % formatUSDValue
+    )  # replaces CoinPublicName with the name of it and adds the symbols in parentheses after
+
+    blocktime = ResponseCoinInfo[
+        "block_time_in_minutes"
+    ]  # pulls the value from the second table that tells how long it takes on average for a new block to be created
+    hashingalg = ResponseCoinInfo[
+        "hashing_algorithm"
+    ]  # pulls the value from the second table that tells what hashing algorithm the coin uses for transactions
+    if (
+        blocktime == 0
+    ):  # only runs if blocktime = 0 because thats what the api returns if the currency doesnt use blocks or couldn't measure how long the blocks take
+        blocktime = "Couldn't verify block time fill length in"  # changes block time to this message instead.
+    # second coin msgs
+    print(
+        "Average time to fill a block : {TimeToFillBlock} Minutes".format(
+            TimeToFillBlock=blocktime
+        )
+    )  # outputs the message to console replaces {TimetoFillBlock} with blocktime
+
+    if hashingalg == "None":  # repeats the process for the hashing algorithm
+        print(
+            "{CoinPublicName} does not use a hashing algorithm to secure transactions".format(  # if the coin doesnt use a hashing algorithm
+                CoinPublicName=coinPublicName
+            )
+        )
+    else:
+        print(
+            "{CoinPublicName} uses the {HashingMethod} hashing algorithm to secure transactions".format(
+                CoinPublicName=coinPublicName, HashingMethod=hashingalg
+            )
+        )  # prints the hashing method if the coin uses 1
+
+    MarketCapRanking = ResponseCoinInfo[
+        "market_cap_rank"
+    ]  # Finds the market cap ranking from the table
+    WatchlistPorfolioUsers = ResponseCoinInfo[
+        "watchlist_portfolio_users"
+    ]  # finds the number of watchlist users from the table
+    formatWatchListValue = comma_value(
+        WatchlistPorfolioUsers
+    )  # adds commas to the number of users from the variable above
+
+    # third coin msgs
+    print(
+        "{CoinSymbolName} is currently ranked #{MCR} globally".format(
+            CoinSymbolName=coinSymbol, MCR=MarketCapRanking
+        )
+    )  # outputs the coin ranking based on market cap, replaces parts of the output with the coins symbol and the market cap ranking.
+
+    print(
+        "It currently has {WPU} active watchlist portfolio users".format(
+            WPU=formatWatchListValue
+        )
+    )  # outputs how many active watchlist users the coin has
+
+else:
+    print(
+        "Request failed with status code:", response.status_code
+    )  # if the status code is anything besides 200 it will print the status code and the say request failed
+
+# HTTPs test Dylan Donahue 9/12/2023
